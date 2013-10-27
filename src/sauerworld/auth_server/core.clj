@@ -66,6 +66,7 @@
 
 (defn auth-handler [ch client-info]
   (let [client (atom {})]
+    (do (log/info (str "server connected " client-info)))
     (receive-all
      ch
      (fn [msg] (dispatch-req client ch msg)))))
