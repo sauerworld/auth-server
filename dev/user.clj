@@ -13,6 +13,8 @@
             [immutant.messaging :as msg]
             ))
 
+(def mykey "")
+
 (defn answer [chal] (crypto/generate-answer mykey chal))
 
 (def c (l/channel))
