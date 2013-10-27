@@ -27,6 +27,7 @@
     (Thread/sleep val)
     (when (get @client id)
       (do
+        (log/info (str "Auth timeout: " id))
         (enqueue ch (str "failauth " id))
         (swap! client #(dissoc % id))))))
 
@@ -35,6 +36,7 @@
   (when-let [pubkey (get-pubkey name)]
     (let [challenge (crypto/generate-challenge pubkey)]
       (do
+        (log/info (str "reqauth, name: " name " id: " id))
         (swap! client #(assoc % id challenge))
         (future (auth-timeout ch id client))
         (enqueue ch (str "chalauth " id " " (:challenge challenge)))))))
@@ -44,8 +46,12 @@
   (when-let [challenge (get @client id)]
     (do
       (if (= answer (:answer challenge))
-        (enqueue ch (str "succauth " id))
-        (enqueue ch (str "failauth " id)))
+        (do
+          (enqueue ch (str "succauth " id))
+          (log/info (str "auth successful: " id)))
+        (do
+          (enqueue ch (str "failauth " id))
+          (log/info (str "auth failed: " id))))
       (swap! client #(dissoc % id)))))
 
 (defn dispatch-req
