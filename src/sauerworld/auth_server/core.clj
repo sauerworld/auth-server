@@ -56,7 +56,7 @@
 
 (defn dispatch-req
   [client ch msg]
-  (let [[command p1 p2] (str/split msg #" ")]
+  (let [[command p1 p2] (str/split (str/trim-newline msg) #" ")]
     (try
       (cond
        (= "reqauth" command) (reqauth-handler client ch p1 p2)
@@ -74,7 +74,7 @@
 (defn start-server
   []
   (tcp/start-tcp-server auth-handler
-                        {:port 28787 :frame (string :ascii :delimiters ["\n" "\r\n"])}))
+                        {:port 28787 :frame (string :ascii :delimiters ["\n"])}))
 
 (defn go []
   (let [server (start-server)]
