@@ -74,7 +74,7 @@
 (defn start-server
   []
   (tcp/start-tcp-server auth-handler
-                        {:port 28787 :frame (string :ascii :delimiters ["\n" "\r\n"])}))
+                        {:port 28787 :frame (string :ascii :delimiters ["\r\n" "\n"])}))
 
 (defn go []
   (let [server (start-server)]
