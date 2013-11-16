@@ -8,7 +8,7 @@
                  [aleph "0.3.0"]
                  [lamina "0.5.0"]
                  [gloss "0.2.2"]
-                 [sauerworld/cube2.crypto "0.8-SNAPSHOT"]]
+                 [sauerworld/cube2.crypto "0.9-SNAPSHOT"]]
   :profiles {:dev
              {:source-paths ["dev"]
               :dependencies [[org.clojars.jcrossley3/tools.namespace "0.2.4.1"]
