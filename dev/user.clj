@@ -8,12 +8,15 @@
             [sauerworld.cube2.crypto :as crypto]
             [lamina.core :as l]
             [lamina.connections :refer (server)]
+            [gloss.core :as g]
+            [gloss.io :as gio]
             [aleph.tcp :as tcp]
             [sauerworld.auth-server.core :as core]
             [clojure.tools.logging :as log]
             [immutant.messaging :as msg])
   (:import (java.net Socket)
-           (java.io PrintWriter InputStreamReader BufferedReader)))
+           (java.io PrintWriter InputStreamReader BufferedReader)
+           (java.nio ByteBuffer)))
 
 (def mykey "")
 
@@ -21,7 +24,9 @@
 
 (def c (l/channel))
 
-(def local ["localhost" 28787])
+(comment (def local ["localhost" 28787]))
+
+(def local ["localhost" 12346])
 
 (defn conn-handler [conn]
   (while (nil? (:exit @conn))
@@ -40,8 +45,6 @@
   (swap! conn assoc :exit true)
   (let [{:keys [in out socket]} @conn]
     (.close socket)
-    (.close in)
-    (.close out)
     conn))
 
 (defn write [conn msg]
@@ -64,3 +67,30 @@
 (defn test-write
   []
   (write connection "reqauth 20 mefisto\r\n"))
+
+(defn str-to-byte-buffer
+  [str]
+  (let [bytearray (byte-array (map byte str))]
+    (ByteBuffer/wrap bytearray)))
+
+(defonce test-server (atom nil))
+
+(defn log-handler [ch client-info]
+  (l/receive-all ch (fn [msg] (log/info "log handler got message" msg))))
+
+(defn log-server
+  []
+  (tcp/start-tcp-server log-handler
+                        {:port 12346
+                         :frame (g/string :ascii
+                                          :delimiters ["\n" "\r"])}))
+
+(defn start-log-server
+  []
+  (let [server (log-server)]
+    (reset! test-server server)))
+
+(defn stop-log-server
+  []
+  (@test-server)
+  (reset! test-server nil))
