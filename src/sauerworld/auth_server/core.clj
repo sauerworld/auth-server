@@ -33,13 +33,15 @@
 
 (defn reqauth-handler
   [client ch id name]
-  (when-let [pubkey (get-pubkey name)]
+  (if-let [pubkey (get-pubkey name)]
     (let [challenge (crypto/generate-challenge pubkey)]
       (do
         (log/info (str "reqauth, name: " name " id: " id))
         (swap! client #(assoc % id challenge))
         (future (auth-timeout ch id client))
-        (enqueue ch (str "chalauth " id " " (:challenge challenge)))))))
+        (enqueue ch (str "chalauth " id " " (:challenge challenge)))))
+    (log/info "No pubkey found for" name
+              " - request from client" (:info @client))))
 
 (defn confauth-handler
   [client ch id answer]
@@ -60,12 +62,17 @@
     (try
       (cond
        (= "reqauth" command) (reqauth-handler client ch p1 p2)
-       (= "confauth" command) (confauth-handler client ch p1 p2))
+       (= "confauth" command) (confauth-handler client ch p1 p2)
+       (= "\n" command) nil
+       :else (do
+               (log/info "Auth server received unknown command message"
+                         msg "from client" (:info @client))
+               nil))
       (catch Throwable t
-        (enqueue ch (str t))))))
+        (log/error "Exception - " (print-cause-trace t))))))
 
 (defn auth-handler [ch client-info]
-  (let [client (atom {})]
+  (let [client (atom {:info client-info})]
     (do (log/info (str "server connected " client-info)))
     (receive-all
      ch
@@ -74,7 +81,9 @@
 (defn start-server
   []
   (tcp/start-tcp-server auth-handler
-                        {:port 28787 :frame (string :ascii :delimiters ["\r\n" "\n"])}))
+                        {:port 28787
+                         :frame (string :ascii
+                                        :delimiters ["\n" "\r"])}))
 
 (defn go []
   (let [server (start-server)]
